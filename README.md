@@ -12,17 +12,17 @@ Następnie wejdź na [http://localhost:8080](http://localhost:8080).
 
 ## GitHub Pages
 
-Aplikacja jest hostowana jako statyczna strona przez GitHub Pages.
+Aplikacja jest publikowana na branchu `gh-pages` (automatycznie przy każdym pushu do `main`).
 
-**Jednorazowa konfiguracja** (wymaga uprawnień właściciela repo):
+**Jeśli widzisz błąd 404**, GitHub Pages nie są jeszcze włączone — zrób to raz ręcznie:
 
-1. Wejdź w **Settings → Pages** repozytorium `jakszt/bingo-app`
-2. W **Build and deployment → Source** wybierz **GitHub Actions**
-3. Po zapisaniu workflow `Deploy GitHub Pages` uruchomi się automatycznie przy każdym pushu do `main`
+1. Otwórz [Settings → Pages](https://github.com/jakszt/bingo-app/settings/pages)
+2. W **Build and deployment → Source** wybierz **Deploy from a branch**
+3. Ustaw branch: **gh-pages**, folder: **/ (root)**
+4. Kliknij **Save**
+5. Poczekaj 1–2 minuty i odśwież: **https://jakszt.github.io/bingo-app/**
 
 Adres po wdrożeniu: `https://jakszt.github.io/bingo-app/`
-
-Alternatywnie (bez Actions): w Source wybierz branch **main**, folder **/ (root)**.
 
 ## „Mini baza danych”
 
