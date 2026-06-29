@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="pl">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <meta name="theme-color" content="#ffffff" />
+    <title>Bingo</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <div class="app">
+      <header class="header">
+        <h1 class="title">Bingo</h1>
+        <p class="subtitle">Wpisz tekst w komórki i oznaczaj trafione pola</p>
+      </header>
+
+      <section class="controls" aria-label="Wybór rozmiaru planszy">
+        <span class="controls__label">Rozmiar:</span>
+        <div class="size-toggle" role="radiogroup" aria-label="Rozmiar planszy">
+          <button type="button" class="size-toggle__btn size-toggle__btn--active" data-size="3" role="radio" aria-checked="true">
+            3×3
+          </button>
+          <button type="button" class="size-toggle__btn" data-size="4" role="radio" aria-checked="false">
+            4×4
+          </button>
+        </div>
+      </section>
+
+      <main class="board-wrapper">
+        <div id="board" class="board board--3" role="grid" aria-label="Plansza bingo"></div>
+      </main>
+
+      <div id="mark-bar" class="mark-bar mark-bar--hidden" aria-live="polite">
+        <button type="button" id="mark-btn" class="mark-btn">Mark it</button>
+      </div>
+    </div>
+
+    <script src="app.js"></script>
+  </body>
+</html>
