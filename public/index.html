@@ -9,27 +9,88 @@
   </head>
   <body>
     <div class="app">
-      <header class="header">
-        <h1 class="title">Bingo</h1>
-        <p class="subtitle">Wpisz tekst w komórki i oznaczaj trafione pola</p>
-      </header>
+      <section id="landing-view" class="landing" aria-label="Start aplikacji">
+        <header class="header">
+          <h1 class="title">Bingo</h1>
+          <p class="subtitle">Utwórz nowe bingo lub dołącz kodem</p>
+        </header>
 
-      <section class="controls" aria-label="Wybór rozmiaru planszy">
-        <span class="controls__label">Rozmiar:</span>
-        <div class="size-toggle" role="radiogroup" aria-label="Rozmiar planszy">
-          <button type="button" class="size-toggle__btn size-toggle__btn--active" data-size="3" role="radio" aria-checked="true">
-            3×3
+        <nav class="entry-nav" aria-label="Wybór trybu">
+          <button type="button" id="btn-new-bingo" class="entry-nav__btn entry-nav__btn--primary">
+            Robię nowe bingo
           </button>
-          <button type="button" class="size-toggle__btn" data-size="4" role="radio" aria-checked="false">
-            4×4
+          <button type="button" id="btn-have-code" class="entry-nav__btn">
+            Mam kod bingo
           </button>
-        </div>
-        <p id="sync-status" class="sync-status" aria-live="polite">Ładowanie…</p>
+        </nav>
+
+        <form id="form-new-bingo" class="entry-form entry-form--hidden" aria-label="Tworzenie nowego bingo">
+          <label class="entry-form__label" for="input-bingo-name">Nazwa bingo</label>
+          <input
+            id="input-bingo-name"
+            class="entry-form__input"
+            type="text"
+            maxlength="80"
+            placeholder="np. Wieczór filmowy"
+            autocomplete="off"
+            required
+          />
+          <button type="submit" class="entry-form__submit">Utwórz bingo</button>
+          <button type="button" id="btn-back-from-new" class="entry-form__back">Wróć</button>
+        </form>
+
+        <form id="form-join-bingo" class="entry-form entry-form--hidden" aria-label="Dołączanie do bingo">
+          <label class="entry-form__label" for="input-bingo-code">Kod bingo</label>
+          <input
+            id="input-bingo-code"
+            class="entry-form__input entry-form__input--code"
+            type="text"
+            maxlength="6"
+            placeholder="np. AB12CD"
+            autocomplete="off"
+            autocapitalize="characters"
+            spellcheck="false"
+            required
+          />
+          <button type="submit" class="entry-form__submit">Dołącz</button>
+          <button type="button" id="btn-back-from-join" class="entry-form__back">Wróć</button>
+        </form>
+
+        <p id="landing-error" class="entry-error entry-error--hidden" role="alert" aria-live="polite"></p>
       </section>
 
-      <main class="board-wrapper">
-        <div id="board" class="board board--3" role="grid" aria-label="Plansza bingo"></div>
-      </main>
+      <section id="board-view" class="board-view board-view--hidden" aria-label="Plansza bingo">
+        <header class="header">
+          <h1 id="bingo-name-display" class="title">Bingo</h1>
+          <p class="subtitle">
+            Kod:
+            <strong id="bingo-code-display" class="bingo-code"></strong>
+          </p>
+        </header>
+
+        <section class="controls" aria-label="Wybór rozmiaru planszy">
+          <span class="controls__label">Rozmiar:</span>
+          <div class="size-toggle" role="radiogroup" aria-label="Rozmiar planszy">
+            <button type="button" class="size-toggle__btn size-toggle__btn--active" data-size="3" role="radio" aria-checked="true">
+              3×3
+            </button>
+            <button type="button" class="size-toggle__btn" data-size="4" role="radio" aria-checked="false">
+              4×4
+            </button>
+          </div>
+          <p id="sync-status" class="sync-status" aria-live="polite"></p>
+        </section>
+
+        <main class="board-wrapper">
+          <div id="board" class="board board--3" role="grid" aria-label="Plansza bingo"></div>
+        </main>
+
+        <div class="board-actions">
+          <button type="button" id="btn-open-other" class="board-actions__btn">
+            Otwórz inne bingo
+          </button>
+        </div>
+      </section>
 
       <div id="mark-bar" class="mark-bar mark-bar--hidden" aria-live="polite">
         <button type="button" id="mark-btn" class="mark-btn">Mark it</button>

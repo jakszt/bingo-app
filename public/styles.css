@@ -56,6 +56,119 @@ body {
   color: var(--color-muted);
 }
 
+.landing--hidden,
+.board-view--hidden,
+.entry-form--hidden,
+.entry-error--hidden,
+.entry-nav__btn--hidden {
+  display: none;
+}
+
+.entry-nav {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.entry-nav__btn,
+.entry-form__submit,
+.entry-form__back,
+.board-actions__btn {
+  appearance: none;
+  border: 2px solid var(--color-border);
+  border-radius: var(--radius);
+  background: var(--color-bg);
+  color: var(--color-text);
+  font: inherit;
+  font-size: 1rem;
+  font-weight: 700;
+  padding: 14px 18px;
+  cursor: pointer;
+  width: 100%;
+  transition: background 0.15s ease, color 0.15s ease, transform 0.1s ease;
+}
+
+.entry-nav__btn--primary,
+.entry-form__submit {
+  background: var(--color-text);
+  color: var(--color-bg);
+}
+
+.entry-nav__btn:active,
+.entry-form__submit:active,
+.entry-form__back:active,
+.board-actions__btn:active {
+  transform: scale(0.98);
+}
+
+.entry-form {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.entry-form__label {
+  font-size: 0.95rem;
+  font-weight: 600;
+}
+
+.entry-form__input {
+  width: 100%;
+  border: 2px solid var(--color-border);
+  border-radius: var(--radius);
+  background: var(--color-bg);
+  color: var(--color-text);
+  font: inherit;
+  font-size: 1rem;
+  font-weight: 600;
+  padding: 14px 16px;
+  outline: none;
+}
+
+.entry-form__input:focus-visible {
+  box-shadow: 0 0 0 3px var(--color-text);
+}
+
+.entry-form__input--code {
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  text-align: center;
+  font-size: 1.2rem;
+}
+
+.entry-form__back {
+  background: transparent;
+}
+
+.entry-error {
+  margin: 0;
+  text-align: center;
+  font-size: 0.9rem;
+  color: #b91c1c;
+  font-weight: 600;
+}
+
+.board-view {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  flex: 1;
+}
+
+.bingo-code {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  letter-spacing: 0.12em;
+}
+
+.board-actions {
+  margin-top: auto;
+  padding-bottom: calc(8px + var(--safe-bottom));
+}
+
+.board-actions__btn {
+  text-align: center;
+}
+
 .controls {
   display: flex;
   align-items: center;

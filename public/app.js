@@ -1,12 +1,29 @@
 const BOARD_ID_KEY = "bingo-board-id";
 
+const landingViewEl = document.getElementById("landing-view");
+const boardViewEl = document.getElementById("board-view");
 const boardEl = document.getElementById("board");
 const markBarEl = document.getElementById("mark-bar");
 const markBtnEl = document.getElementById("mark-btn");
 const sizeButtons = document.querySelectorAll(".size-toggle__btn");
 const statusEl = document.getElementById("sync-status");
+const bingoNameDisplayEl = document.getElementById("bingo-name-display");
+const bingoCodeDisplayEl = document.getElementById("bingo-code-display");
+const landingErrorEl = document.getElementById("landing-error");
+
+const btnNewBingoEl = document.getElementById("btn-new-bingo");
+const btnHaveCodeEl = document.getElementById("btn-have-code");
+const btnOpenOtherEl = document.getElementById("btn-open-other");
+const btnBackFromNewEl = document.getElementById("btn-back-from-new");
+const btnBackFromJoinEl = document.getElementById("btn-back-from-join");
+
+const formNewBingoEl = document.getElementById("form-new-bingo");
+const formJoinBingoEl = document.getElementById("form-join-bingo");
+const inputBingoNameEl = document.getElementById("input-bingo-name");
+const inputBingoCodeEl = document.getElementById("input-bingo-code");
 
 let boardId = null;
+let bingoName = "";
 let boardSize = 3;
 let selectedCell = null;
 let cellTexts = {};
@@ -18,6 +35,21 @@ function cellKey(row, col) {
   return `${row}-${col}`;
 }
 
+function normalizeCode(value) {
+  return String(value || "").trim().toUpperCase().replace(/[^A-Z0-9]/g, "");
+}
+
+function setLandingError(message) {
+  if (!message) {
+    landingErrorEl.textContent = "";
+    landingErrorEl.classList.add("entry-error--hidden");
+    return;
+  }
+
+  landingErrorEl.textContent = message;
+  landingErrorEl.classList.remove("entry-error--hidden");
+}
+
 function setStatus(message, isError = false) {
   if (!statusEl) {
     return;
@@ -27,18 +59,51 @@ function setStatus(message, isError = false) {
   statusEl.classList.toggle("sync-status--error", isError);
 }
 
-function getOrCreateBoardId() {
-  let id = localStorage.getItem(BOARD_ID_KEY);
+function showLanding() {
+  landingViewEl.classList.remove("landing--hidden");
+  boardViewEl.classList.add("board-view--hidden");
+  markBarEl.classList.add("mark-bar--hidden");
+  clearSelection();
+  resetEntryForms();
+}
 
-  if (!id) {
-    id = crypto.randomUUID();
-    localStorage.setItem(BOARD_ID_KEY, id);
-  }
+function showBoardView() {
+  landingViewEl.classList.add("landing--hidden");
+  boardViewEl.classList.remove("board-view--hidden");
+  bingoNameDisplayEl.textContent = bingoName;
+  bingoCodeDisplayEl.textContent = boardId;
+}
 
-  return id;
+function resetEntryForms() {
+  formNewBingoEl.classList.add("entry-form--hidden");
+  formJoinBingoEl.classList.add("entry-form--hidden");
+  btnNewBingoEl.classList.remove("entry-nav__btn--hidden");
+  btnHaveCodeEl.classList.remove("entry-nav__btn--hidden");
+  inputBingoNameEl.value = "";
+  inputBingoCodeEl.value = "";
+  setLandingError("");
+}
+
+function showNewBingoForm() {
+  setLandingError("");
+  btnNewBingoEl.classList.add("entry-nav__btn--hidden");
+  btnHaveCodeEl.classList.add("entry-nav__btn--hidden");
+  formJoinBingoEl.classList.add("entry-form--hidden");
+  formNewBingoEl.classList.remove("entry-form--hidden");
+  inputBingoNameEl.focus();
+}
+
+function showJoinBingoForm() {
+  setLandingError("");
+  btnNewBingoEl.classList.add("entry-nav__btn--hidden");
+  btnHaveCodeEl.classList.add("entry-nav__btn--hidden");
+  formNewBingoEl.classList.add("entry-form--hidden");
+  formJoinBingoEl.classList.remove("entry-form--hidden");
+  inputBingoCodeEl.focus();
 }
 
 function applyState(state) {
+  bingoName = state.name || "";
   boardSize = state.boardSize === 4 ? 4 : 3;
   cellTexts = state.cellTexts && typeof state.cellTexts === "object" ? state.cellTexts : {};
   markedCells = new Set(Array.isArray(state.markedCells) ? state.markedCells : []);
@@ -46,29 +111,92 @@ function applyState(state) {
 
 function getStatePayload() {
   return {
+    name: bingoName,
     boardSize,
     cellTexts,
     markedCells: [...markedCells],
   };
 }
 
-async function loadState() {
-  boardId = getOrCreateBoardId();
-  setStatus("Ładowanie…");
+function rememberBoard(id) {
+  localStorage.setItem(BOARD_ID_KEY, id);
+}
+
+function forgetBoard() {
+  localStorage.removeItem(BOARD_ID_KEY);
+}
+
+async function fetchBoard(id) {
+  const response = await fetch(`/api/board/${id}`);
+
+  if (response.status === 404) {
+    throw new Error("Nie znaleziono bingo o podanym kodzie.");
+  }
+
+  if (!response.ok) {
+    throw new Error("Nie udało się wczytać bingo.");
+  }
+
+  return response.json();
+}
+
+async function openBoard(id, state) {
+  boardId = id;
+  applyState(state);
+  rememberBoard(id);
+  isReady = true;
+  showBoardView();
+  syncSizeButtons();
+  renderBoard();
+  setStatus("Zapisane w chmurze");
+}
+
+async function createNewBingo(name) {
+  setLandingError("");
+
+  const response = await fetch("/api/board", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ name }),
+  });
+
+  const data = await response.json();
+
+  if (!response.ok) {
+    throw new Error(data.error || "Nie udało się utworzyć bingo.");
+  }
+
+  await openBoard(data.id, data);
+}
+
+async function joinBingo(code) {
+  setLandingError("");
+  const normalizedCode = normalizeCode(code);
+
+  if (normalizedCode.length < 4) {
+    throw new Error("Podaj poprawny kod bingo.");
+  }
+
+  const data = await fetchBoard(normalizedCode);
+  await openBoard(normalizedCode, data);
+}
+
+async function resumeSavedBoard() {
+  const savedId = localStorage.getItem(BOARD_ID_KEY);
+
+  if (!savedId) {
+    showLanding();
+    return;
+  }
 
   try {
-    const response = await fetch(`/api/board/${boardId}`);
-
-    if (!response.ok) {
-      throw new Error("Nie udało się wczytać planszy.");
-    }
-
-    applyState(await response.json());
-    isReady = true;
-    setStatus("Zapisane w chmurze");
-  } catch (error) {
-    isReady = false;
-    setStatus(error.message || "Błąd połączenia z bazą", true);
+    const data = await fetchBoard(savedId);
+    await openBoard(savedId, data);
+  } catch {
+    forgetBoard();
+    showLanding();
   }
 }
 
@@ -88,11 +216,13 @@ async function persistState() {
       body: JSON.stringify(getStatePayload()),
     });
 
+    const data = await response.json();
+
     if (!response.ok) {
-      throw new Error("Nie udało się zapisać planszy.");
+      throw new Error(data.error || "Nie udało się zapisać planszy.");
     }
 
-    applyState(await response.json());
+    applyState(data);
     setStatus("Zapisane w chmurze");
   } catch (error) {
     setStatus(error.message || "Błąd zapisu", true);
@@ -246,6 +376,45 @@ function syncSizeButtons() {
   });
 }
 
+function leaveCurrentBoard() {
+  clearTimeout(saveTimer);
+  boardId = null;
+  bingoName = "";
+  isReady = false;
+  forgetBoard();
+  showLanding();
+}
+
+btnNewBingoEl.addEventListener("click", showNewBingoForm);
+btnHaveCodeEl.addEventListener("click", showJoinBingoForm);
+btnBackFromNewEl.addEventListener("click", resetEntryForms);
+btnBackFromJoinEl.addEventListener("click", resetEntryForms);
+btnOpenOtherEl.addEventListener("click", leaveCurrentBoard);
+
+formNewBingoEl.addEventListener("submit", async (event) => {
+  event.preventDefault();
+
+  try {
+    await createNewBingo(inputBingoNameEl.value.trim());
+  } catch (error) {
+    setLandingError(error.message || "Nie udało się utworzyć bingo.");
+  }
+});
+
+formJoinBingoEl.addEventListener("submit", async (event) => {
+  event.preventDefault();
+
+  try {
+    await joinBingo(inputBingoCodeEl.value);
+  } catch (error) {
+    setLandingError(error.message || "Nie udało się dołączyć do bingo.");
+  }
+});
+
+inputBingoCodeEl.addEventListener("input", () => {
+  inputBingoCodeEl.value = normalizeCode(inputBingoCodeEl.value);
+});
+
 sizeButtons.forEach((btn) => {
   btn.addEventListener("click", () => {
     setBoardSize(Number(btn.dataset.size));
@@ -256,17 +425,11 @@ markBtnEl.addEventListener("click", markSelectedCell);
 
 document.addEventListener("click", (event) => {
   if (
-    !event.target.closest(".cell") &&
-    !event.target.closest("#mark-btn")
+    boardViewEl.classList.contains("board-view--hidden") ||
+    (!event.target.closest(".cell") && !event.target.closest("#mark-btn"))
   ) {
     clearSelection();
   }
 });
 
-async function init() {
-  await loadState();
-  syncSizeButtons();
-  renderBoard();
-}
-
-init();
+resumeSavedBoard();
