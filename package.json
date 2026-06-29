@@ -1,0 +1,13 @@
+{
+  "name": "bingo-app",
+  "private": true,
+  "version": "1.0.0",
+  "scripts": {
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy",
+    "db:migrate": "wrangler d1 execute bingo-app-db --remote --file=./schema.sql"
+  },
+  "devDependencies": {
+    "wrangler": "^4.105.0"
+  }
+}

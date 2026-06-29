@@ -1,51 +1,114 @@
-const STORAGE_KEY = "bingo-app-state";
+const BOARD_ID_KEY = "bingo-board-id";
 
 const boardEl = document.getElementById("board");
 const markBarEl = document.getElementById("mark-bar");
 const markBtnEl = document.getElementById("mark-btn");
 const sizeButtons = document.querySelectorAll(".size-toggle__btn");
+const statusEl = document.getElementById("sync-status");
 
+let boardId = null;
 let boardSize = 3;
 let selectedCell = null;
 let cellTexts = {};
 let markedCells = new Set();
+let saveTimer = null;
+let isReady = false;
 
 function cellKey(row, col) {
   return `${row}-${col}`;
 }
 
-function loadState() {
+function setStatus(message, isError = false) {
+  if (!statusEl) {
+    return;
+  }
+
+  statusEl.textContent = message;
+  statusEl.classList.toggle("sync-status--error", isError);
+}
+
+function getOrCreateBoardId() {
+  let id = localStorage.getItem(BOARD_ID_KEY);
+
+  if (!id) {
+    id = crypto.randomUUID();
+    localStorage.setItem(BOARD_ID_KEY, id);
+  }
+
+  return id;
+}
+
+function applyState(state) {
+  boardSize = state.boardSize === 4 ? 4 : 3;
+  cellTexts = state.cellTexts && typeof state.cellTexts === "object" ? state.cellTexts : {};
+  markedCells = new Set(Array.isArray(state.markedCells) ? state.markedCells : []);
+}
+
+function getStatePayload() {
+  return {
+    boardSize,
+    cellTexts,
+    markedCells: [...markedCells],
+  };
+}
+
+async function loadState() {
+  boardId = getOrCreateBoardId();
+  setStatus("Ładowanie…");
+
   try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    if (!raw) {
-      return;
+    const response = await fetch(`/api/board/${boardId}`);
+
+    if (!response.ok) {
+      throw new Error("Nie udało się wczytać planszy.");
     }
 
-    const state = JSON.parse(raw);
-    boardSize = state.boardSize === 4 ? 4 : 3;
-    cellTexts = state.cellTexts && typeof state.cellTexts === "object" ? state.cellTexts : {};
-    markedCells = new Set(Array.isArray(state.markedCells) ? state.markedCells : []);
-  } catch {
-    boardSize = 3;
-    cellTexts = {};
-    markedCells = new Set();
+    applyState(await response.json());
+    isReady = true;
+    setStatus("Zapisane w chmurze");
+  } catch (error) {
+    isReady = false;
+    setStatus(error.message || "Błąd połączenia z bazą", true);
   }
 }
 
-function saveState() {
-  localStorage.setItem(
-    STORAGE_KEY,
-    JSON.stringify({
-      boardSize,
-      cellTexts,
-      markedCells: [...markedCells],
-    })
-  );
+async function persistState() {
+  if (!isReady || !boardId) {
+    return;
+  }
+
+  setStatus("Zapisywanie…");
+
+  try {
+    const response = await fetch(`/api/board/${boardId}`, {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(getStatePayload()),
+    });
+
+    if (!response.ok) {
+      throw new Error("Nie udało się zapisać planszy.");
+    }
+
+    applyState(await response.json());
+    setStatus("Zapisane w chmurze");
+  } catch (error) {
+    setStatus(error.message || "Błąd zapisu", true);
+  }
+}
+
+function scheduleSave() {
+  clearTimeout(saveTimer);
+  saveTimer = setTimeout(() => {
+    persistState();
+  }, 350);
 }
 
 function saveCellText(row, col, value) {
   cellTexts[cellKey(row, col)] = value;
-  saveState();
+  scheduleSave();
 }
 
 function getCellText(row, col) {
@@ -138,7 +201,7 @@ function markSelectedCell() {
 
   saveCellText(row, col, input.value);
   markedCells.add(cellKey(row, col));
-  saveState();
+  scheduleSave();
 
   selectedCell.classList.add("cell--marked");
   selectedCell.classList.remove("cell--selected");
@@ -164,7 +227,7 @@ function setBoardSize(size) {
   }
 
   boardSize = size;
-  saveState();
+  scheduleSave();
 
   sizeButtons.forEach((btn) => {
     const isActive = Number(btn.dataset.size) === size;
@@ -200,6 +263,10 @@ document.addEventListener("click", (event) => {
   }
 });
 
-loadState();
-syncSizeButtons();
-renderBoard();
+async function init() {
+  await loadState();
+  syncSizeButtons();
+  renderBoard();
+}
+
+init();

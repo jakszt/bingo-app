@@ -64,6 +64,18 @@ body {
   flex-wrap: wrap;
 }
 
+.sync-status {
+  width: 100%;
+  margin: 0;
+  text-align: center;
+  font-size: 0.85rem;
+  color: var(--color-muted);
+}
+
+.sync-status--error {
+  color: #b91c1c;
+}
+
 .controls__label {
   font-size: 0.95rem;
   font-weight: 600;

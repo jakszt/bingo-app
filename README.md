@@ -1,39 +1,47 @@
 # Bingo App
 
-Mobile-first aplikacja przeglądarkowa do gry w bingo (3×3 lub 4×4).
+Mobile-first aplikacja przeglądarkowa do gry w bingo (3×3 lub 4×4), hostowana na **Cloudflare Workers** z bazą **D1**.
 
 ## Uruchomienie lokalne
 
 ```bash
-python3 -m http.server 8080
+npm install
+npm run dev
 ```
 
-Następnie wejdź na [http://localhost:8080](http://localhost:8080).
+Aplikacja będzie dostępna pod adresem podanym przez Wrangler (zwykle `http://localhost:8787`).
 
-## GitHub Pages
+## Deploy na Cloudflare
 
-Aplikacja jest publikowana na branchu `gh-pages` (automatycznie przy każdym pushu do `main`).
+Projekt używa Cloudflare Workers (statyczne pliki + API) i bazy D1 `bingo-app-db`.
 
-**Jeśli widzisz błąd 404**, GitHub Pages nie są jeszcze włączone — zrób to raz ręcznie:
+### Wymagane sekrety w GitHub (Settings → Secrets)
 
-1. Otwórz [Settings → Pages](https://github.com/jakszt/bingo-app/settings/pages)
-2. W **Build and deployment → Source** wybierz **Deploy from a branch**
-3. Ustaw branch: **gh-pages**, folder: **/ (root)**
-4. Kliknij **Save**
-5. Poczekaj 1–2 minuty i odśwież: **https://jakszt.github.io/bingo-app/**
+- `CLOUDFLARE_API_TOKEN` — token z uprawnieniami Workers Scripts:Edit i D1:Edit
+- `CLOUDFLARE_ACCOUNT_ID` — ID konta Cloudflare
 
-Adres po wdrożeniu: `https://jakszt.github.io/bingo-app/`
+### Ręczny deploy
 
-## „Mini baza danych”
+```bash
+npm install
+npm run db:migrate
+npm run deploy
+```
 
-GitHub Pages serwuje tylko pliki statyczne — bez własnego backendu. Stan planszy (teksty, oznaczenia, rozmiar) jest zapisywany w **localStorage** przeglądarki (darmowe, bez konfiguracji). Dane zostają po odświeżeniu strony na tym samym urządzeniu i w tej samej przeglądarce.
+Wymaga zalogowania: `npx wrangler login`
 
-Jeśli kiedyś potrzebujesz synchronizacji między urządzeniami, można dodać darmowy tier **Supabase** lub **Firebase**.
+## Architektura
+
+- `public/` — frontend (HTML, CSS, JS)
+- `src/worker.js` — API `/api/board/:id` zapisujące stan w D1
+- `wrangler.jsonc` — konfiguracja Workera i bindingu D1
+
+Każda przeglądarka dostaje unikalny `boardId` (localStorage). Stan planszy (teksty, oznaczenia, rozmiar) jest zapisywany w chmurze w D1.
 
 ## Funkcje
 
 - Wybór planszy 3×3 lub 4×4
 - Wpisywanie własnego tekstu w każdej komórce
 - Oznaczanie komórek przyciskiem „Mark it” (zielone tło, biały tekst)
-- Automatyczny zapis stanu w przeglądarce
+- Automatyczny zapis stanu w Cloudflare D1
 - Domyślny styl czarno-biały z wyraźnymi tekstami

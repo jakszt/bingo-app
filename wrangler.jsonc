@@ -1,0 +1,18 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "bingo-app",
+  "compatibility_date": "2026-06-29",
+  "main": "./src/worker.js",
+  "assets": {
+    "directory": "./public",
+    "binding": "ASSETS",
+    "run_worker_first": ["/api/*"]
+  },
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "bingo-app-db",
+      "database_id": "912af10e-ccf6-4cf8-b1b9-f2e925594d4a"
+    }
+  ]
+}
