@@ -1,3 +1,5 @@
+const STORAGE_KEY = "bingo-app-state";
+
 const boardEl = document.getElementById("board");
 const markBarEl = document.getElementById("mark-bar");
 const markBtnEl = document.getElementById("mark-btn");
@@ -6,17 +8,52 @@ const sizeButtons = document.querySelectorAll(".size-toggle__btn");
 let boardSize = 3;
 let selectedCell = null;
 let cellTexts = {};
+let markedCells = new Set();
 
 function cellKey(row, col) {
   return `${row}-${col}`;
 }
 
+function loadState() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (!raw) {
+      return;
+    }
+
+    const state = JSON.parse(raw);
+    boardSize = state.boardSize === 4 ? 4 : 3;
+    cellTexts = state.cellTexts && typeof state.cellTexts === "object" ? state.cellTexts : {};
+    markedCells = new Set(Array.isArray(state.markedCells) ? state.markedCells : []);
+  } catch {
+    boardSize = 3;
+    cellTexts = {};
+    markedCells = new Set();
+  }
+}
+
+function saveState() {
+  localStorage.setItem(
+    STORAGE_KEY,
+    JSON.stringify({
+      boardSize,
+      cellTexts,
+      markedCells: [...markedCells],
+    })
+  );
+}
+
 function saveCellText(row, col, value) {
   cellTexts[cellKey(row, col)] = value;
+  saveState();
 }
 
 function getCellText(row, col) {
   return cellTexts[cellKey(row, col)] || "";
+}
+
+function isCellMarked(row, col) {
+  return markedCells.has(cellKey(row, col));
 }
 
 function clearSelection() {
@@ -33,7 +70,9 @@ function showMarkBar() {
 
 function createCell(row, col) {
   const cell = document.createElement("div");
-  cell.className = "cell";
+  const marked = isCellMarked(row, col);
+
+  cell.className = marked ? "cell cell--marked" : "cell";
   cell.setAttribute("role", "gridcell");
   cell.dataset.row = String(row);
   cell.dataset.col = String(col);
@@ -98,6 +137,9 @@ function markSelectedCell() {
   const input = selectedCell.querySelector(".cell__input");
 
   saveCellText(row, col, input.value);
+  markedCells.add(cellKey(row, col));
+  saveState();
+
   selectedCell.classList.add("cell--marked");
   selectedCell.classList.remove("cell--selected");
   selectedCell = null;
@@ -122,6 +164,7 @@ function setBoardSize(size) {
   }
 
   boardSize = size;
+  saveState();
 
   sizeButtons.forEach((btn) => {
     const isActive = Number(btn.dataset.size) === size;
@@ -130,6 +173,14 @@ function setBoardSize(size) {
   });
 
   renderBoard();
+}
+
+function syncSizeButtons() {
+  sizeButtons.forEach((btn) => {
+    const isActive = Number(btn.dataset.size) === boardSize;
+    btn.classList.toggle("size-toggle__btn--active", isActive);
+    btn.setAttribute("aria-checked", String(isActive));
+  });
 }
 
 sizeButtons.forEach((btn) => {
@@ -149,4 +200,6 @@ document.addEventListener("click", (event) => {
   }
 });
 
+loadState();
+syncSizeButtons();
 renderBoard();
